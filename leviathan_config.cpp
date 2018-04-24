@@ -44,10 +44,9 @@ leviathan_config parse_config_file(const char *const path) {
   leviathan_config options;
   try {
     YAML::Node config     = YAML::LoadFile(path);
-    options.enable_color_ = config["enable_color"].as<bool>();
-    options.main_color_   = config["main_color"].as<uint32_t>();
     options.temp_source_  = config["temperature_source"].as<std::string>();
     options.ftp_          = configure_fan_profile(config["fan_profile"]);
+    options.main_color_   = config["main_color"].as<uint32_t>();
     options.interval_     = config["interval"].as<uint32_t>();
   } catch (std::exception &e) {
     LOG(FATAL) << "Yaml parsing error: " << e.what();
