@@ -16,6 +16,7 @@ struct Point {
 
 struct leviathan_config {
   // Fan profile
+  std::string temp_source_{"cpu"};
   std::map<int32_t, LineFunction> ftp_;
 
   // Color settings
@@ -27,6 +28,8 @@ struct leviathan_config {
 
   uint8_t blink_interval_{0};
   uint8_t alter_interval_{0};
+  // Interval settings
+  uint32_t interval_{500};
 };
 
 leviathan_config parse_config_file(const char *const path);

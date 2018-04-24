@@ -57,7 +57,7 @@ std::string KrakenDriver::getSerialNumber() const {
 
 void KrakenDriver::setFanSpeed(unsigned char fan_speed) {
   CHECK(fan_speed <= 100 && fan_speed >= 30 && fan_speed % 5 == 0)
-    << "Fan speed must be between 30 and 100 and divisible by 5: " 
+    << "Fan speed must be between 30 and 100 and divisible by 5: "
     << (uint32_t)fan_speed;
   _fan_speed[1] = fan_speed;
 }
@@ -77,12 +77,15 @@ void KrakenDriver::setColor(uint32_t c) {
   _color[3] = color[2];
 }
 
-std::map<std::string, uint32_t> KrakenDriver::sendKrakenUpdate() {
+std::map<std::string, uint32_t> KrakenDriver::sendColorUpdate() {
+  sendControlTransfer(KRAKEN_BEGIN);
+  sendBulkRawData(_color, 19);
+  return receiveStatus();
+}
+
+std::map<std::string, uint32_t> KrakenDriver::sendSpeedUpdate() {
   sendControlTransfer(KRAKEN_BEGIN);
   sendBulkRawData(_pump_speed, 2);
-  sendBulkRawData(_color, 19);
-  receiveStatus();  // ignore?
-  sendControlTransfer(KRAKEN_BEGIN);
   sendBulkRawData(_fan_speed, 2);
   return receiveStatus();
 }
@@ -97,7 +100,6 @@ void KrakenDriver::sendControlTransfer(uint16_t wValue) {
                 << libusb_error_name(r) << " -- "
                 << libusb_strerror((libusb_error)r);
 }
-
 
 std::map<std::string, uint32_t> KrakenDriver::receiveStatus() {
   unsigned char status[32];

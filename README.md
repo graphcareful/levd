@@ -1,6 +1,6 @@
 # levd
 
-Daemon with configurable properties that will control NZXT Kraken x61 
+Daemon with configurable properties that will control NZXT Kraken x61
 liquid cooler.
 
 ### Dependencies
@@ -13,7 +13,7 @@ $ sudo dnf install yaml-devel glog-devel libusb-devel
 
 ### Building
 
-To compile this project ensure you have an up-to-date cpp compiler toolchain 
+To compile this project ensure you have an up-to-date cpp compiler toolchain
 that supports c++ 14. Also ensure you have the cmake build tool. To build:
 
 ```
@@ -27,7 +27,7 @@ $ sudo make install # Optionally
 
 Using `make install` will install the program and its necessary config files
 into the filesystem. You'll need to run this command as sudo, as the installer
-will copy files into directories outside of your home directory. Here's what 
+will copy files into directories outside of your home directory. Here's what
 the output of `make install` should look like:
 
 ```
@@ -35,9 +35,8 @@ the output of `make install` should look like:
 Install the project...
 -- Install configuration: ""
 -- Installing: /usr/bin/kraken
--- Up-to-date: /usr/bin
 -- Installing: /usr/bin/kraken-start.sh
--- Installing: /etc/leviathan
+-- Up-to-date: /etc/leviathan
 -- Installing: /etc/leviathan/levd.cfg
 -- Up-to-date: /etc/systemd/system
 -- Installing: /etc/systemd/system/levd.service
@@ -51,25 +50,26 @@ modifications we're introducing. Follow the examples below:
 
 ```
 $ sudo systemctl daemon-reload # Use this whenever levd.service changes
-$ sudo systemctl enable levd 
+$ sudo systemctl enable levd
 $ sudo systemctl start levd # stop sends SIGKILL to process, gracefully terminating
 ```
 
 ### Configuration
 
 The program must see a valid `levd.cfg` file located in `/etc/leviathan`. A sample can
-be found in the `config/` folder. Your configuration file must be in yaml format and 
-contain at least the `fan_profile`, `enable_color`, and `main_color` properties. Later
-properties are not supported at this moment.
+be found in the `config/` folder. Your configuration file must be in yaml format and
+contain at least the `main_color`, `temperature_source`, `fan_profile` and `interval`
+properties. Other properties are not supported at this moment.
 
 To set a fan curve, add to the `fan_profile` list, other lists of size two.
-These are data points which build your fan profile curve - x value being CPU temp 
-(in C) and y value being fan percentage (in factors of 5, 30 being lowest, 100 highest).
+These are data points which build your fan profile curve - x value being temp (cpu or
+liquid, in C) and y value being fan percentage (in factors of 5, 30 being lowest, 100
+highest).
 
 Eg:
 ```
-fan_profile: 
-  - 
+fan_profile:
+  -
     - 30
     - 30
   -
@@ -89,14 +89,14 @@ fan_profile:
     - 100
 ```
 
-At a CPU temperature of 30C the fan will operate at its lowest value, 30%. At a reading
-of 37C the program will perform the necessary calculations to find the fan value 48% - 
+At a temperature of 30C the fan will operate at its lowest value, 30%. At a reading
+of 37C the program will perform the necessary calculations to find the fan value 48% -
 then rounding up to the nearest multiple of 5, being 50%. All of this happens every 0.5s.
 
 Also real-time updates to the `levd.cfg` file are supported. No need to relaunch the daemon
 every time you modify a property.
 
-The future project `levd-settings` will allow you to modify the `levd.cfg` file using a 
+The future project `levd-settings` will allow you to modify the `levd.cfg` file using a
 GUI using the Qt framework.
 
 
@@ -106,7 +106,7 @@ Sure, using journalctl you can see the programs stderr/stdout logs.
 
 ```
 $ sudo journalctl -f -u levd.service
-[sudo] password for [user]: 
+[sudo] password for [user]:
 -- Logs begin at Wed 2017-08-16 15:57:01 EDT. --
 Aug 16 20:18:13 localhost.localdomain systemd[1]: Started Leviathan - Daemon for Kraken x61 Watercooler.
 Aug 16 20:31:02 localhost.localdomain kraken-start.sh[22349]: I0816 20:31:02.675717 22349 main.cpp:20] There are 15 usb devices hooked up
@@ -138,10 +138,10 @@ $ sudo systemctl status levd.service
 
 ### Thank you to...
 
-https://github.com/jaksi/leviathan 
+https://github.com/jaksi/leviathan
 
-As I was reverse engineering the windows driver, I later found out that someone else did a way 
-better job then me :) 
+As I was reverse engineering the windows driver, I later found out that someone else did a way
+better job then me :)
 
 This project would not have been possible without contributions to the open source community from
 jaksi.
