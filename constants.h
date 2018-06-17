@@ -11,7 +11,7 @@
 #define KRAKEN_INIT 0x0002
 #define KRAKEN_BEGIN 0x0001
 
-const char *const kDefaultCPUTempFile = "/sys/class/thermal/thermal_zone0/temp";
+const char *const kDefaultCPUTempFile = "/sys/class/hwmon/hwmon0/temp1_input";
 const char *const kDefaultConfigFile  = "/etc/leviathan/levd.cfg";
 
 const unsigned char kDefaultColor[19] = {
