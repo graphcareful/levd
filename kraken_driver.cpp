@@ -26,8 +26,11 @@ KrakenDriver::KrakenDriver(libusb_device *kraken_device)
   // Grab endpoints via libusb
   CHECK (_config->bConfigurationValue == kMainConfigurationValue)
     << "bConfigurationValue must equal: " << kMainConfigurationValue;
-  CHECK(libusb_set_configuration(_handle, kMainConfigurationValue) == 0)
-    << "Error when setting kraken usb configuration";
+  const int set_configuration_result =
+    libusb_set_configuration(_handle, kMainConfigurationValue);
+  CHECK(set_configuration_result == 0)
+    << "Error when setting kraken usb configuration, got: "
+    << set_configuration_result;
   const libusb_interface_descriptor main_interface =
     get_main_usb_interface(_config);
   const libusb_endpoint_descriptor *endpoints = main_interface.endpoint;

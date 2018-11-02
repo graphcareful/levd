@@ -103,16 +103,12 @@ void leviathan_start(libusb_device *kraken_device) {
     // Update color, which also provides the liquid temp in case it's needed.
     kd->setColor(config_opts.main_color_);
     auto update = kd->sendColorUpdate();
-    if (update.empty() == true) {
-      LOG(WARNING) << "Bad update detected, attempting reconnection...";
-      kd.reset(new KrakenDriver(kraken_device));
-    }
 
     // Grab latest cpu and liquid temperatures
     istream >> cpu_temp;
     istream.seekg(0);
     cpu_temp = cpu_temp / 1000;
-    liquid_temp = update.find("liquid_temperature")->second;
+    liquid_temp = !update.empty() ? update.find("liquid_temperature")->second : cpu_temp;
 
     // Based on parameters and current temp, set desired fan and pump speeds
     uint32_t next;
@@ -131,6 +127,7 @@ void leviathan_start(libusb_device *kraken_device) {
       LOG(WARNING) << "Bad update detected, attempting reconnection...";
       kd.reset(new KrakenDriver(kraken_device));
     }
+
     if (next != old_fan_speed) {
       LOG(INFO) << "Changed fan speed to " << update.find("fan_speed")->second
                 << "rpm, pump speed to " << update.find("pump_speed")->second
@@ -142,5 +139,6 @@ void leviathan_start(libusb_device *kraken_device) {
 
     std::this_thread::sleep_for(std::chrono::milliseconds(config_opts.interval_));
   }
+
   istream.close();
 }
