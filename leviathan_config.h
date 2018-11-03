@@ -16,9 +16,10 @@ struct Point {
 };
 
 struct leviathan_config {
-  // Fan profile
+  // Fan/pump profile
   std::string temp_source_{"cpu"};
-  std::map<int32_t, LineFunction> ftp_;
+  std::map<int32_t, LineFunction> fan_profile_;
+  std::map<int32_t, LineFunction> pump_profile_;
 
   // Color settings
   uint32_t main_color_{DEFAULT_RED};

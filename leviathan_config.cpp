@@ -16,7 +16,7 @@ LineFunction slope_function(const Point &a, const Point &b) {
   };
 }
 
-std::map<int32_t, LineFunction> configure_fan_profile(
+std::map<int32_t, LineFunction> configure_profile(
   const YAML::Node &fan_profile) {
   CHECK(fan_profile.IsSequence()) << "Expecting a sequence of pairs";
   const auto point_compare = [](const Point &p, const Point &u) {
@@ -24,8 +24,8 @@ std::map<int32_t, LineFunction> configure_fan_profile(
   };
   std::vector<Point> dataPoints { Point(0, 30) };
   for (const auto &i : fan_profile.as<std::vector<std::vector<uint32_t>>>()) {
-    CHECK(i.size() == 2) << "Expecting array of pairs for fan_profile";
-    CHECK(i.back() % 5 == 0) << "Fan profile values must be divisible by 5";
+    CHECK(i.size() == 2) << "Expecting array of pairs for fan/pump profile";
+    CHECK(i.back() % 5 == 0) << "Fan/pump profile values must be divisible by 5";
     dataPoints.emplace_back(i.front(), i.back());
   }
   dataPoints.emplace_back(100, 100);
@@ -45,7 +45,8 @@ leviathan_config parse_config_file(const char *const path) {
   try {
     YAML::Node config     = YAML::LoadFile(path);
     options.temp_source_  = config["temperature_source"].as<std::string>();
-    options.ftp_          = configure_fan_profile(config["fan_profile"]);
+    options.fan_profile_  = configure_profile(config["fan_profile"]);
+    options.pump_profile_ = config["pump_profile"] ? configure_profile(config["pump_profile"]) : options.fan_profile_;
     options.main_color_   = config["main_color"].as<uint32_t>();
     options.interval_     = config["interval"].as<uint32_t>();
   } catch (std::exception &e) {

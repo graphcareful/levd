@@ -75,6 +75,7 @@ void leviathan_start(libusb_device *kraken_device) {
   uint32_t cpu_temp           = 0;
   uint32_t liquid_temp        = 0;
   uint32_t old_fan_speed      = 0;
+  uint32_t old_pump_speed     = 0;
   time_t   last_time_modified = std::numeric_limits<time_t>::min();
 
   // Init signal handler
@@ -111,30 +112,35 @@ void leviathan_start(libusb_device *kraken_device) {
     liquid_temp = !update.empty() ? update.find("liquid_temperature")->second : cpu_temp;
 
     // Based on parameters and current temp, set desired fan and pump speeds
-    uint32_t next;
+    uint32_t next_fan, next_pump;
     if (config_opts.temp_source_ == "liquid") {
-      next = next_speed(config_opts.ftp_, liquid_temp);
-      VLOG(2) << "Current Liquid Temperature: " << liquid_temp << "C";
+      next_fan = next_speed(config_opts.fan_profile_, liquid_temp);
+      next_pump = next_speed(config_opts.pump_profile_, liquid_temp);
+      VLOG(2) << "Current liquid temperature: " << liquid_temp << "C";
     } else {
-      next = next_speed(config_opts.ftp_, cpu_temp);
-      VLOG(2) << "Current CPU Temperature: " << cpu_temp << "C";
+      next_fan = next_speed(config_opts.fan_profile_, cpu_temp);
+      next_pump = next_speed(config_opts.pump_profile_, cpu_temp);
+      VLOG(2) << "Current CPU temperature: " << cpu_temp << "C";
     }
-    VLOG(2) << "Setting fan and pump speeds: " << next;
-    kd->setFanSpeed(next);
-    kd->setPumpSpeed(next);
+    VLOG(2) << "Setting fan speed: " << next_fan;
+    VLOG(2) << "Setting pump speeds: " << next_pump;
+    kd->setFanSpeed(next_fan);
+    kd->setPumpSpeed(next_pump);
     update = kd->sendSpeedUpdate();
     if (update.empty() == true) {
       LOG(WARNING) << "Bad update detected, attempting reconnection...";
       kd.reset(new KrakenDriver(kraken_device));
     }
 
-    if (next != old_fan_speed) {
+    if (next_fan != old_fan_speed || next_pump != old_pump_speed) {
       LOG(INFO) << "Changed fan speed to " << update.find("fan_speed")->second
                 << "rpm, pump speed to " << update.find("pump_speed")->second
-                << "rpm, with fan/pump percentage at " << next
+                << "rpm, with fan percentage at " << next_fan
+                << ", with pump percentage at " << next_pump
                 << ", current CPU temperature at " << cpu_temp << "C"
                 << ", and current liquid temperature at " << liquid_temp << "C";
-      old_fan_speed = next;
+      old_fan_speed = next_fan;
+      old_pump_speed = next_pump;
     }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(config_opts.interval_));
