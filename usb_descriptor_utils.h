@@ -21,3 +21,5 @@ bool transfer_bulk_raw_data(libusb_device_handle *handle,
                             unsigned char         endpoint,
                             unsigned char *       data,
                             size_t                length);
+
+bool transfer_control_value(libusb_device_handle *handle, uint16_t value);

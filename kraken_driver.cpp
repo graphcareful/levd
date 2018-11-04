@@ -30,7 +30,7 @@ KrakenDriver::KrakenDriver(libusb_device *kraken_device)
     libusb_set_configuration(_handle, kMainConfigurationValue);
   CHECK(set_configuration_result == 0)
     << "Error when setting kraken usb configuration, got: "
-    << set_configuration_result;
+    << libusb_error_name(set_configuration_result);
   const libusb_interface_descriptor main_interface =
     get_main_usb_interface(_config);
   const libusb_endpoint_descriptor *endpoints = main_interface.endpoint;
@@ -95,13 +95,19 @@ std::map<std::string, uint32_t> KrakenDriver::sendSpeedUpdate() {
 
 /** ********** Private interface ********** */
 
-void KrakenDriver::sendControlTransfer(uint16_t wValue) {
-  static const unsigned int kKrakenUsbTimeout = 1000;
-  int r = libusb_control_transfer(_handle, 0x40, 2, wValue, 0, NULL, 0,
-                                  kKrakenUsbTimeout);
-  CHECK(r == 0) << "Error when performing initialization of device: "
-                << libusb_error_name(r) << " -- "
-                << libusb_strerror((libusb_error)r);
+bool KrakenDriver::sendControlTransfer(uint16_t wValue) {
+  return transfer_control_value(_handle, wValue);
+}
+
+bool KrakenDriver::sendBulkRawData(unsigned char *data, const size_t length) {
+  return transfer_bulk_raw_data(_handle, _endpointOut.bEndpointAddress, data,
+                                length);
+}
+
+bool KrakenDriver::readBulkRawData(unsigned char *results,
+                                   const size_t   length) {
+  return transfer_bulk_raw_data(_handle, _endpointIn.bEndpointAddress, results,
+                                length);
 }
 
 std::map<std::string, uint32_t> KrakenDriver::receiveStatus() {
@@ -114,15 +120,4 @@ std::map<std::string, uint32_t> KrakenDriver::receiveStatus() {
   results["pump_speed"]         = 256 * status[8] + status[9];
   results["liquid_temperature"] = status[10];
   return results;
-}
-
-bool KrakenDriver::sendBulkRawData(unsigned char *data, const size_t length) {
-  return transfer_bulk_raw_data(_handle, _endpointOut.bEndpointAddress, data,
-                                length);
-}
-
-bool KrakenDriver::readBulkRawData(unsigned char *results,
-                                   const size_t   length) {
-  return transfer_bulk_raw_data(_handle, _endpointIn.bEndpointAddress, results,
-                                length);
 }

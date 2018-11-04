@@ -25,7 +25,7 @@ class KrakenDriver {
   std::string getSerialNumber() const;
 
  private:
-  void sendControlTransfer(uint16_t wValue);
+  bool sendControlTransfer(uint16_t wValue);
   bool sendBulkRawData(unsigned char *data, const size_t length);
   bool readBulkRawData(unsigned char *results, const size_t length);
 

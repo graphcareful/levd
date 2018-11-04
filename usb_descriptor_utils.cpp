@@ -4,6 +4,8 @@
 #define kMainConfigurationIndex 0
 #define kMainConfigurationValue 1
 
+#define kKrakenUsbTimeout 3000
+
 bool incoming_endpoint(const libusb_endpoint_descriptor &endpoint) {
   // Or alternatively if this bit operation isn't == 0
   return (endpoint.bEndpointAddress & LIBUSB_ENDPOINT_IN) == LIBUSB_ENDPOINT_IN;
@@ -94,7 +96,6 @@ bool transfer_bulk_raw_data(libusb_device_handle *handle,
                             unsigned char         endpoint,
                             unsigned char *       data,
                             size_t                length) {
-  static const unsigned int kKrakenUsbTimeout = 1000;
   unsigned char *           head              = data;
   int *                     transferred       = new int;
   size_t                    bytes_sent        = 0;
@@ -107,7 +108,8 @@ bool transfer_bulk_raw_data(libusb_device_handle *handle,
       bytes_sent += bytes_to_send;
       head = data + bytes_sent;
     } else {
-      LOG(ERROR) << "Failed to send packed to device";
+      LOG(ERROR) << "Failed to send packed to device, got: "
+                << libusb_error_name(ret);
       break;
     }
   }
@@ -115,3 +117,13 @@ bool transfer_bulk_raw_data(libusb_device_handle *handle,
   CHECK(bytes_sent <= length) << "Sent more bytes then should have";
   return (bytes_sent == length) ? true : false;
 }
+
+bool transfer_control_value(libusb_device_handle *handle, uint16_t value) {
+  int ret = libusb_control_transfer(handle, 0x40, 2, value, 0, NULL, 0,
+                                  kKrakenUsbTimeout);
+  CHECK(ret == 0) << "Error when performing initialization of device: "
+                << libusb_error_name(ret) << " -- "
+                << libusb_strerror((libusb_error)ret);
+  return ret == 0;
+}
+
