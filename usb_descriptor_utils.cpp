@@ -4,7 +4,7 @@
 #define kMainConfigurationIndex 0
 #define kMainConfigurationValue 1
 
-#define kKrakenUsbTimeout 3000
+#define kKrakenUsbTimeout 5000
 
 bool incoming_endpoint(const libusb_endpoint_descriptor &endpoint) {
   // Or alternatively if this bit operation isn't == 0

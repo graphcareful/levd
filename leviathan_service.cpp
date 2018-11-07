@@ -129,6 +129,7 @@ void leviathan_start(libusb_device *kraken_device) {
     update = kd->sendSpeedUpdate();
     if (update.empty() == true) {
       LOG(WARNING) << "Bad update detected, attempting reconnection...";
+      std::this_thread::sleep_for(10s);
       kd.reset(new KrakenDriver(kraken_device));
     }
 
@@ -146,5 +147,6 @@ void leviathan_start(libusb_device *kraken_device) {
     std::this_thread::sleep_for(std::chrono::milliseconds(config_opts.interval_));
   }
 
+  kd.reset(nullptr);
   istream.close();
 }
