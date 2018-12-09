@@ -1,7 +1,8 @@
 # levd
 
-Daemon with configurable properties that will control NZXT Kraken x61
-liquid cooler.
+Daemon with configurable properties that will control NZXT Kraken x61 liquid cooler.
+
+
 
 ### Dependencies
 
@@ -11,10 +12,11 @@ This project depends on glog, yaml-cpp and libusb. On fedora:
 $ sudo dnf install yaml-devel glog-devel libusb-devel
 ```
 
+
+
 ### Building
 
-To compile this project ensure you have an up-to-date cpp compiler toolchain
-that supports c++ 14. Also ensure you have the cmake build tool. To build:
+To compile this project ensure you have an up-to-date cpp compiler toolchain that supports c++ 14. Also ensure you have the cmake build tool. To build:
 
 ```
 $ mkdir build && cd build
@@ -23,12 +25,11 @@ $ make
 $ sudo make install # Optionally
 ```
 
+
+
 ### Installing
 
-Using `make install` will install the program and its necessary config files
-into the filesystem. You'll need to run this command as sudo, as the installer
-will copy files into directories outside of your home directory. Here's what
-the output of `make install` should look like:
+Using `make install` will install the program and its necessary config files into the filesystem. You'll need to run this command as sudo, as the installer will copy files into directories outside of your home directory. Here's what the output of `make install` should look like:
 
 ```
 [100%] Built target kraken
@@ -42,11 +43,11 @@ Install the project...
 -- Installing: /etc/systemd/system/levd.service
 ```
 
+
+
 ### Setting up for use as daemon
 
-Now that all of the necessary files have been copied into their respecive locations
-(also with the correct permissions), you'll have to let systemctl be aware of the
-modifications we're introducing. Follow the examples below:
+Now that all of the necessary files have been copied into their respecive locations (also with the correct permissions), you'll have to let systemctl be aware of the modifications we're introducing. Follow the examples below:
 
 ```
 $ sudo systemctl daemon-reload # Use this whenever levd.service changes
@@ -54,19 +55,15 @@ $ sudo systemctl enable levd
 $ sudo systemctl start levd # stop sends SIGKILL to process, gracefully terminating
 ```
 
+
+
 ### Configuration
 
-The program must see a valid `levd.cfg` file located in `/etc/leviathan`. A sample can
-be found in the `config/` folder. Your configuration file must be in yaml format and
-contain at least the `main_color`, `temperature_source`, `fan_profile` and `interval`
-properties. Other properties are not supported at this moment.
+The program must see a valid `levd.cfg` file located in `/etc/leviathan`. A sample can be found in the `config/` folder. Your configuration file must be in yaml format and contain at least the `main_color`, `temperature_source`, `fan_profile` and `interval` properties.
 
-To set a fan curve, add to the `fan_profile` list, other lists of size two.
-These are data points which build your fan profile curve - x value being temp (cpu or
-liquid, in C) and y value being fan percentage (in factors of 5, 30 being lowest, 100
-highest).
+To set a fan curve, add to the `fan_profile` list, other lists of size two. These are data points which build your fan profile curve - x value being temp (cpu or liquid, in C) and y value being fan percentage (in factors of 5, 30 being lowest, 100 highest).
 
-Eg:
+You can also set a different profile for the pump using `pump_profile`. If unspecified, the pump will follow `fan_profile`. For example:
 ```
 fan_profile:
   -
@@ -89,20 +86,17 @@ fan_profile:
     - 100
 ```
 
-At a temperature of 30C the fan will operate at its lowest value, 30%. At a reading
-of 37C the program will perform the necessary calculations to find the fan value 48% -
-then rounding up to the nearest multiple of 5, being 50%. All of this happens every 0.5s.
+At a temperature of 30C the fan/pump will operate at their lowest value, 30%. At a reading
+of 37C the program will perform the necessary calculations to find the fan/pump value 48% -
+then rounding up to the nearest multiple of 5, being 50%. All of this happens every interval, which by default is 0.5 seconds.
 
-Also real-time updates to the `levd.cfg` file are supported. No need to relaunch the daemon
-every time you modify a property.
-
-The future project `levd-settings` will allow you to modify the `levd.cfg` file using a
-GUI using the Qt framework.
+Real-time updates to the `levd.cfg` file are supported. No need to relaunch the daemon every time you modify a property.
 
 
-### Can I get some logs?
 
-Sure, using journalctl you can see the programs stderr/stdout logs.
+### Logging
+
+Using journalctl you can see the programs stderr/stdout logs.
 
 ```
 $ sudo journalctl -f -u levd.service
@@ -136,13 +130,12 @@ $ sudo systemctl status levd.service
    CGroup: /system.slice/levd.service
 ```
 
-### Thank you to...
+
+
+### Acknowledgements
 
 https://github.com/jaksi/leviathan
 
-As I was reverse engineering the windows driver, I later found out that someone else did a way
-better job then me :)
+As I was reverse engineering the windows driver, I later found out that someone else did a way better job then me :)
 
-This project would not have been possible without contributions to the open source community from
-jaksi.
-
+This project would not have been possible without contributions to the open source community from jaksi.
