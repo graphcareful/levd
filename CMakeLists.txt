@@ -21,7 +21,7 @@ target_link_libraries(kraken ${KRAKEN_LIB_LIBRARIES})
 
 install(
   TARGETS kraken
-  RUNTIME DESTINATION bin
+  RUNTIME DESTINATION /usr/bin
   )
 # TODO: Find a shorter way to install!
 install(
