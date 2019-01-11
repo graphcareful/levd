@@ -1,12 +1,14 @@
+#include "build/version.h"
+#include "leviathan_service.h"
 #include <glog/logging.h>
 #include <libusb-1.0/libusb.h>
-
-#include "leviathan_service.h"
 
 int main(int argc, char *argv[]) {
   FLAGS_logtostderr = 1;
   google::InstallFailureSignalHandler();
   google::InitGoogleLogging(argv[0]);
+  LOG(INFO) << "Starting Levd Daemon version: " << LEVD_VERSION_MAJOR << "."
+            << LEVD_VERSION_MINOR;
 
   const int rc = libusb_init(NULL);
   CHECK(rc == 0) << "Error initializing libusb: " << libusb_error_name(rc);

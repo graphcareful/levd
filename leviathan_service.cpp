@@ -20,7 +20,7 @@ using namespace std::chrono_literals;
 
 // Global kill all armed when SIGTERM is detected
 volatile sig_atomic_t done = 0;
-void term(int signum) { done = 1; }
+void                  term(int signum) { done = 1; }
 
 /** *********** Private Interface ************** */
 
@@ -37,7 +37,7 @@ bool detect_kraken(libusb_device *device) {
 }
 
 uint32_t next_speed(const std::map<int32_t, LineFunction> &fan_profile,
-                    const uint32_t current_temp) {
+                    const uint32_t                         current_temp) {
   const auto slopeFn = fan_profile.upper_bound(current_temp)->second;
   return slopeFn(current_temp);
 }
@@ -109,16 +109,17 @@ void leviathan_start(libusb_device *kraken_device) {
     istream >> cpu_temp;
     istream.seekg(0);
     cpu_temp = cpu_temp / 1000;
-    liquid_temp = !update.empty() ? update.find("liquid_temperature")->second : cpu_temp;
+    liquid_temp =
+      !update.empty() ? update.find("liquid_temperature")->second : cpu_temp;
 
     // Based on parameters and current temp, set desired fan and pump speeds
     uint32_t next_fan, next_pump;
     if (config_opts.temp_source_ == "liquid") {
-      next_fan = next_speed(config_opts.fan_profile_, liquid_temp);
+      next_fan  = next_speed(config_opts.fan_profile_, liquid_temp);
       next_pump = next_speed(config_opts.pump_profile_, liquid_temp);
       VLOG(2) << "Current liquid temperature: " << liquid_temp << "C";
     } else {
-      next_fan = next_speed(config_opts.fan_profile_, cpu_temp);
+      next_fan  = next_speed(config_opts.fan_profile_, cpu_temp);
       next_pump = next_speed(config_opts.pump_profile_, cpu_temp);
       VLOG(2) << "Current CPU temperature: " << cpu_temp << "C";
     }
@@ -140,11 +141,12 @@ void leviathan_start(libusb_device *kraken_device) {
                 << ", with pump percentage at " << next_pump
                 << ", current CPU temperature at " << cpu_temp << "C"
                 << ", and current liquid temperature at " << liquid_temp << "C";
-      old_fan_speed = next_fan;
+      old_fan_speed  = next_fan;
       old_pump_speed = next_pump;
     }
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(config_opts.interval_));
+    std::this_thread::sleep_for(
+      std::chrono::milliseconds(config_opts.interval_));
   }
 
   kd.reset(nullptr);

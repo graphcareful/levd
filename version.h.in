@@ -1,0 +1,11 @@
+/* version.h */
+
+#ifndef VERSION_H_
+#define VERSION_H_
+
+/* extern const char * VERSION_STR; */
+/* extern const char * BUILD_TIME_STR; */
+#define LEVD_VERSION_MAJOR ${Levd_VERSION_MAJOR}
+#define LEVD_VERSION_MINOR ${Levd_VERSION_MINOR}
+
+#endif /* VERSION_H_ */
