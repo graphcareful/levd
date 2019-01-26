@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.6)
 project (kraken_linux)
 # The version number.
 set (Levd_VERSION_MAJOR 0)
-set (Levd_VERSION_MINOR 3)
+set (Levd_VERSION_MINOR 4)
 
 
 set(CMAKE_CXX_STANDARD 14)

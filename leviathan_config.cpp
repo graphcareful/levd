@@ -39,12 +39,11 @@ std::map<int32_t, LineFunction> configure_profile(
   return temp_to_slope;
 }
 
-// TODO: Ensure other options are set or ignored
 leviathan_config parse_config_file(const char *const path) {
   leviathan_config options;
   try {
     YAML::Node config     = YAML::LoadFile(path);
-    options.temp_source_  = config["temperature_source"].as<std::string>();
+    options.temp_source_  = stringToTempSource(config["temperature_source"].as<std::string>());
     options.fan_profile_  = configure_profile(config["fan_profile"]);
     options.pump_profile_ = config["pump_profile"] ? configure_profile(config["pump_profile"]) : options.fan_profile_;
     options.main_color_   = config["main_color"].as<uint32_t>();

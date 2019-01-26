@@ -114,8 +114,11 @@ std::map<std::string, uint32_t> KrakenDriver::receiveStatus() {
   unsigned char status[32];
   std::map<std::string, uint32_t> results;
   if (readBulkRawData(status, 32) == false) {
+    LOG(WARNING) << "Call to readBulkRawData - 32 bytes, failed";
     return results;
   }
+  // TODO: Kraken is returning 0 for status[0] and status[1]
+  // Maybe a firmware update is needed...
   results["fan_speed"]          = 256 * status[0] + status[1];
   results["pump_speed"]         = 256 * status[8] + status[9];
   results["liquid_temperature"] = status[10];

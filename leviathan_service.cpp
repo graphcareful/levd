@@ -74,8 +74,8 @@ void leviathan_start(libusb_device *kraken_device) {
   LOG_IF(FATAL, !istream.good()) << "Could not open: " << kDefaultCPUTempFile;
   uint32_t cpu_temp           = 0;
   uint32_t liquid_temp        = 0;
-  uint32_t old_fan_speed      = 0;
-  uint32_t old_pump_speed     = 0;
+  uint32_t old_fan_speed      = 30; // Kraken starts up at slowest speed
+  uint32_t old_pump_speed     = 30; // .. it is its default
   time_t   last_time_modified = std::numeric_limits<time_t>::min();
 
   // Init signal handler
@@ -114,7 +114,7 @@ void leviathan_start(libusb_device *kraken_device) {
 
     // Based on parameters and current temp, set desired fan and pump speeds
     uint32_t next_fan, next_pump;
-    if (config_opts.temp_source_ == "liquid") {
+    if (config_opts.temp_source_ == TempSource::LIQUID) {
       next_fan  = next_speed(config_opts.fan_profile_, liquid_temp);
       next_pump = next_speed(config_opts.pump_profile_, liquid_temp);
       VLOG(2) << "Current liquid temperature: " << liquid_temp << "C";
@@ -123,6 +123,12 @@ void leviathan_start(libusb_device *kraken_device) {
       next_pump = next_speed(config_opts.pump_profile_, cpu_temp);
       VLOG(2) << "Current CPU temperature: " << cpu_temp << "C";
     }
+    // Step down: If we are decreasing fan/pump speed, do it slowly
+    if (next_fan < old_fan_speed) {
+      next_fan = old_fan_speed - 5;
+    } if (next_pump < old_pump_speed) {
+      next_pump = old_pump_speed - 5;
+    }
     VLOG(2) << "Setting fan speed: " << next_fan;
     VLOG(2) << "Setting pump speeds: " << next_pump;
     kd->setFanSpeed(next_fan);
@@ -130,7 +136,7 @@ void leviathan_start(libusb_device *kraken_device) {
     update = kd->sendSpeedUpdate();
     if (update.empty() == true) {
       LOG(WARNING) << "Bad update detected, attempting reconnection...";
-      std::this_thread::sleep_for(10s);
+      std::this_thread::sleep_for(5s);
       kd.reset(new KrakenDriver(kraken_device));
     }
 

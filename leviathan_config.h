@@ -9,6 +9,12 @@
 
 using LineFunction = std::function<int32_t(int32_t)>;
 
+enum class TempSource { CPU, LIQUID };
+
+inline TempSource stringToTempSource(const std::string &tss) {
+  return tss == "liquid" ? TempSource::LIQUID : TempSource::CPU;
+}
+
 struct Point {
   int32_t x;
   int32_t y;
@@ -17,7 +23,7 @@ struct Point {
 
 struct leviathan_config {
   // Fan/pump profile
-  std::string temp_source_{"cpu"};
+  TempSource                      temp_source_{TempSource::CPU};
   std::map<int32_t, LineFunction> fan_profile_;
   std::map<int32_t, LineFunction> pump_profile_;
 
