@@ -24,7 +24,7 @@ KrakenDriver::KrakenDriver(libusb_device *kraken_device)
   memcpy(_color, kDefaultColor, 19);
 
   // Grab endpoints via libusb
-  CHECK (_config->bConfigurationValue == kMainConfigurationValue)
+  CHECK(_config->bConfigurationValue == kMainConfigurationValue)
     << "bConfigurationValue must equal: " << kMainConfigurationValue;
   const int set_configuration_result =
     libusb_set_configuration(_handle, kMainConfigurationValue);
@@ -111,7 +111,7 @@ bool KrakenDriver::readBulkRawData(unsigned char *results,
 }
 
 std::map<std::string, uint32_t> KrakenDriver::receiveStatus() {
-  unsigned char status[32];
+  unsigned char                   status[32];
   std::map<std::string, uint32_t> results;
   if (readBulkRawData(status, 32) == false) {
     LOG(WARNING) << "Call to readBulkRawData - 32 bytes, failed";

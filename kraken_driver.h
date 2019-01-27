@@ -11,6 +11,9 @@
 // and set the proper usb configuration to kMainConfigurationIndex
 class KrakenDriver {
  public:
+  // TODO: Maybe this makes more sense to be a singleton?
+  // Creating an instance of this object claims ownership of the usb
+  // endpoint, new instances fail to initalize on construction
   KrakenDriver(libusb_device *kraken);
   KrakenDriver(const KrakenDriver &) = delete;
   KrakenDriver(const KrakenDriver &&) = delete;

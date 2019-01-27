@@ -136,6 +136,10 @@ void leviathan_start(libusb_device *kraken_device) {
     update = kd->sendSpeedUpdate();
     if (update.empty() == true) {
       LOG(WARNING) << "Bad update detected, attempting reconnection...";
+      // NOTE: Must ensure that destructor of old object pointed to by kd
+      // is cleaned up before reassignment to a new instance of kraken
+      // driver. i.e. only one can be alive at any given time.
+      kd.reset(nullptr);
       std::this_thread::sleep_for(5s);
       kd.reset(new KrakenDriver(kraken_device));
     }
