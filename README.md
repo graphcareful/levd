@@ -6,7 +6,7 @@ Daemon with configurable properties that will control NZXT Kraken x61 liquid coo
 
 ### Dependencies
 
-This project depends on glog, yaml-cpp and libusb. On fedora:
+This project depends on glog, yaml-cpp, libusb and lm_sensors. On fedora:
 
 ```
 $ sudo dnf install yaml-cpp-devel glog-devel libusb-devel lm_sensors-devel
