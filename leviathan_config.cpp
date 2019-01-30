@@ -1,4 +1,4 @@
-#include "leviathan_config.h"
+#include "leviathan_config.hpp"
 #include <exception>
 #include <algorithm>
 #include <glog/logging.h>
@@ -6,7 +6,12 @@
 
 // TODO: Cleaner normalization
 LineFunction slope_function(const Point &a, const Point &b) {
-  const auto slope = (b.y - a.y) / (b.x - a.x);
+  const auto ys = b.y - a.y;
+  const auto xs = b.x - a.x;
+  if (xs == 0) {
+    throw std::runtime_error("Infinite slope detected");
+  }
+  const auto slope = ys / xs;
   const auto bFac  = b.y - (slope * b.x);
   return [slope, bFac](int32_t x) {
     const auto newY = (slope * x) + bFac;

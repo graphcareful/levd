@@ -8,6 +8,7 @@ set (Levd_VERSION_MINOR 4)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_FLAGS "-fmax-errors=2")
 set(KRAKEN_LIB_LIBRARIES
+  :libsensors.so
   :libyaml-cpp.so
   :libglog.so.0
   :libusb-1.0.so.0)

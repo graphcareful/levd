@@ -1,4 +1,4 @@
-#include "usb_descriptor_utils.h"
+#include "usb_descriptor_utils.hpp"
 #include <glog/logging.h>
 
 #define kMainConfigurationIndex 0

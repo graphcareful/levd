@@ -1,5 +1,5 @@
 #include "build/version.h"
-#include "leviathan_service.h"
+#include "leviathan_service.hpp"
 #include <glog/logging.h>
 #include <libusb-1.0/libusb.h>
 

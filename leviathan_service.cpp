@@ -1,7 +1,8 @@
-#include "leviathan_service.h"
+#include "leviathan_service.hpp"
 #include "constants.h"  // #defines
-#include "kraken_driver.h"
-#include "leviathan_config.h"
+#include "kraken_driver.hpp"
+#include "leviathan_config.hpp"
+#include "cpu_temperature_monitor.hpp"
 
 #include <chrono>
 #include <fstream>
@@ -68,14 +69,15 @@ void leviathan_start(libusb_device *kraken_device) {
   LOG(INFO) << "Kraken Driver Initialized";
   LOG(INFO) << "Kraken Serial No: " << kd->getSerialNumber();
 
-  // Open config file and handle to thermal monitor
+  // The following two lines throw/crash on config error
+  CpuTemperatureMonitor cpu_temp_mon;
   auto          config_opts = parse_config_file(kDefaultConfigFile);
-  std::ifstream istream(kDefaultCPUTempFile);
-  LOG_IF(FATAL, !istream.good()) << "Could not open: " << kDefaultCPUTempFile;
+
+  // Local variables for state management
   uint32_t cpu_temp           = 0;
   uint32_t liquid_temp        = 0;
-  uint32_t old_fan_speed      = 30; // Kraken starts up at slowest speed
-  uint32_t old_pump_speed     = 30; // .. it is its default
+  uint32_t old_fan_speed      = 0; // Take first reported value as
+  uint32_t old_pump_speed     = 0; // .. an update
   time_t   last_time_modified = std::numeric_limits<time_t>::min();
 
   // Init signal handler
@@ -106,9 +108,7 @@ void leviathan_start(libusb_device *kraken_device) {
     auto update = kd->sendColorUpdate();
 
     // Grab latest cpu and liquid temperatures
-    istream >> cpu_temp;
-    istream.seekg(0);
-    cpu_temp = cpu_temp / 1000;
+    cpu_temp = cpu_temp_mon.getPackageIdTemperature();
     liquid_temp =
       !update.empty() ? update.find("liquid_temperature")->second : cpu_temp;
 
@@ -160,5 +160,4 @@ void leviathan_start(libusb_device *kraken_device) {
   }
 
   kd.reset(nullptr);
-  istream.close();
 }

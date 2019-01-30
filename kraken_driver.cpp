@@ -1,5 +1,5 @@
-#include "kraken_driver.h"
-#include "usb_descriptor_utils.h"
+#include "kraken_driver.hpp"
+#include "usb_descriptor_utils.hpp"
 
 #include <algorithm>
 #include <glog/logging.h>
