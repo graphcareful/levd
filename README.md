@@ -1,7 +1,6 @@
-# levd
+# levd [![CircleCI](https://circleci.com/gh/graphcareful/levd/tree/master.svg?style=svg)](https://circleci.com/gh/graphcareful/levd/tree/master)
 
 Daemon with configurable properties that will control NZXT Kraken x61 liquid cooler.
-
 
 
 ### Dependencies
