@@ -1,0 +1,17 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: fedora:30
+    steps:
+      - checkout
+      - run:
+          name: install pre dependencies
+          command: |
+            dnf update -yqq && dnf install -yqq yaml-cpp-devel glog-devel libusb-devel lm_sensors-devel gcc-c++ cmake make
+            mkdir build
+            cd build
+            cmake ..
+            make -j4 install
+
+        
