@@ -13,6 +13,7 @@
 
 const char *const kDefaultCPUTempFile = "/sys/class/hwmon/hwmon0/temp1_input";
 const char *const kDefaultConfigFile  = "/etc/leviathan/levd.cfg";
+const char *const kDefaultConkyFile  = "/etc/leviathan/levd.cfg";
 
 const unsigned char kDefaultColor[19] = {
   KRAKEN_COLOR_CODE, 0xff, 0xff, 0xff,

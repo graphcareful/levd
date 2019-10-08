@@ -1,0 +1,7 @@
+-I.
+-std=c++17
+-Wall
+-Wextra
+-lasan
+-g
+
