@@ -1,8 +1,8 @@
 #include "leviathan_service.hpp"
 #include "constants.h"  // #defines
+#include "cpu_temperature_monitor.hpp"
 #include "kraken_driver.hpp"
 #include "leviathan_config.hpp"
-#include "cpu_temperature_monitor.hpp"
 
 #include <chrono>
 #include <fstream>
@@ -50,6 +50,20 @@ int file_is_modified(const char *path, time_t oldMTime) {
   return file_stat.st_mtime > oldMTime;
 }
 
+void update_conky_file(std::ostream &     ostream,
+                       const std::string &serial,
+                       const uint32_t     fan_speed,
+                       const uint32_t     pump_speed,
+                       const uint32_t     water_temp) {
+  std::stringstream ss;
+  ss << "Kraken Serial: " << serial << std::endl;
+  ss << "Fan Speed: " << fan_speed << std::endl;
+  ss << "Pump Speed: " << pump_speed << std::endl;
+  ss << "Water Temp: " << water_temp << std::endl;
+  ostream.seekp(0);
+  ostream << ss.str();
+}
+
 /** *********** Public Interface ************** */
 
 libusb_device *leviathan_init(libusb_device **devices, ssize_t num_devices) {
@@ -71,13 +85,14 @@ void leviathan_start(libusb_device *kraken_device) {
 
   // The following two lines throw/crash on config error
   CpuTemperatureMonitor cpu_temp_mon;
-  auto          config_opts = parse_config_file(kDefaultConfigFile);
+  auto                  config_opts = parse_config_file(kDefaultConfigFile);
+  std::ofstream         conky_oss(config_opts.conky_file_);
 
   // Local variables for state management
   uint32_t cpu_temp           = 0;
   uint32_t liquid_temp        = 0;
-  uint32_t old_fan_speed      = 0; // Take first reported value as
-  uint32_t old_pump_speed     = 0; // .. an update
+  uint32_t old_fan_speed      = 0;  // Take first reported value as
+  uint32_t old_pump_speed     = 0;  // .. an update
   time_t   last_time_modified = std::numeric_limits<time_t>::min();
 
   // Init signal handler
@@ -108,9 +123,8 @@ void leviathan_start(libusb_device *kraken_device) {
     auto update = kd->sendColorUpdate();
 
     // Grab latest cpu and liquid temperatures
-    cpu_temp = cpu_temp_mon.getPackageIdTemperature();
-    liquid_temp =
-      !update.empty() ? update.find("liquid_temperature")->second : cpu_temp;
+    cpu_temp    = cpu_temp_mon.getPackageIdTemperature();
+    liquid_temp = update.find("liquid_temperature")->second;
 
     // Based on parameters and current temp, set desired fan and pump speeds
     uint32_t next_fan, next_pump;
@@ -126,7 +140,8 @@ void leviathan_start(libusb_device *kraken_device) {
     // Step down: If we are decreasing fan/pump speed, do it slowly
     if (next_fan < old_fan_speed) {
       next_fan = old_fan_speed - 5;
-    } if (next_pump < old_pump_speed) {
+    }
+    if (next_pump < old_pump_speed) {
       next_pump = old_pump_speed - 5;
     }
     VLOG(2) << "Setting fan speed: " << next_fan;
@@ -145,12 +160,15 @@ void leviathan_start(libusb_device *kraken_device) {
     }
 
     if (next_fan != old_fan_speed || next_pump != old_pump_speed) {
-      LOG(INFO) << "Changed fan speed to " << update.find("fan_speed")->second
-                << "rpm, pump speed to " << update.find("pump_speed")->second
-                << "rpm, with fan percentage at " << next_fan
+      const auto fan_speed  = update.find("fan_speed")->second;
+      const auto pump_speed = update.find("pump_speed")->second;
+      LOG(INFO) << "Changed fan speed to " << fan_speed << "rpm, pump speed to "
+                << pump_speed << "rpm, with fan percentage at " << next_fan
                 << ", with pump percentage at " << next_pump
                 << ", current CPU temperature at " << cpu_temp << "C"
                 << ", and current liquid temperature at " << liquid_temp << "C";
+      update_conky_file(conky_oss, kd->getSerialNumber(), fan_speed, pump_speed,
+                        liquid_temp);
       old_fan_speed  = next_fan;
       old_pump_speed = next_pump;
     }

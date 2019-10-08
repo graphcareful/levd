@@ -53,6 +53,7 @@ leviathan_config parse_config_file(const char *const path) {
     options.pump_profile_ = config["pump_profile"] ? configure_profile(config["pump_profile"]) : options.fan_profile_;
     options.main_color_   = config["main_color"].as<uint32_t>();
     options.interval_     = config["interval"].as<uint32_t>();
+    options.conky_file_   = config["conky_file"].as<std::string>();
   } catch (std::exception &e) {
     LOG(FATAL) << "Yaml parsing error: " << e.what();
   }

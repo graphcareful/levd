@@ -5,7 +5,7 @@ set (Levd_VERSION_MAJOR 0)
 set (Levd_VERSION_MINOR 4)
 
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-fmax-errors=2")
 set(KRAKEN_LIB_LIBRARIES
   :libsensors.so

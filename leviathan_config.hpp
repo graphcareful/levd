@@ -1,6 +1,7 @@
 #ifndef LEVIATHAN_CONFIG_H
 #define LEVIATHAN_CONFIG_H
 
+#include "constants.h"
 #include <functional>
 #include <map>
 #include <string>
@@ -26,6 +27,9 @@ struct leviathan_config {
   TempSource                      temp_source_{TempSource::CPU};
   std::map<int32_t, LineFunction> fan_profile_;
   std::map<int32_t, LineFunction> pump_profile_;
+
+  // conky integration
+  std::string conky_file_{kDefaultConkyFile};
 
   // Color settings
   uint32_t main_color_{DEFAULT_RED};
