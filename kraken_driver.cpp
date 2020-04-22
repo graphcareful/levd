@@ -8,6 +8,7 @@
 #define kMainConfigurationIndex 0
 #define kMainConfigurationValue 1
 
+namespace levd {
 void set_color_arr(const uint32_t c, unsigned char *arr) {
   arr[0] = (c & 0x00FF0000) >> 16;
   arr[1] = (c & 0x0000FF00) >> 8;
@@ -114,7 +115,7 @@ std::map<std::string, uint32_t> KrakenDriver::receiveStatus() {
   unsigned char                   status[32];
   std::map<std::string, uint32_t> results;
   if (readBulkRawData(status, 32) == false) {
-    LOG(WARNING) << "Call to readBulkRawData - 32 bytes, failed";
+    SYSLOG(WARNING) << "Call to readBulkRawData - 32 bytes, failed";
     return results;
   }
   // TODO: Kraken is returning 0 for status[0] and status[1]
@@ -124,3 +125,4 @@ std::map<std::string, uint32_t> KrakenDriver::receiveStatus() {
   results["liquid_temperature"] = status[10];
   return results;
 }
+}  // namespace levd

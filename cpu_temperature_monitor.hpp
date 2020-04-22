@@ -26,15 +26,25 @@ class CpuTemperatureMonitor {
     }
     return temperatureForCoreId(core_id + 1);
   }
+  // Takes an average across all cores, does not factor in package ID
+  double getAverageTempAcrossCores() const {
+    uint32_t runningTotal = 0;
+    for (uint8_t i = 1; i <= coreCount(); ++i)
+      runningTotal += temperatureForCoreId(i);
+    return runningTotal / coreCount();
+  }
+
   // Returns the number of physical cores in the CPU
   size_t coreCount() const { return subfeatures_.size() - 1; }
 
  private:
+
+  // NOTE: Remember the 0th item is PackageId
   uint32_t temperatureForCoreId(uint8_t id) const {
     const sensors_subfeature *const subfeature = subfeatures_[id];
     double                          value;
     if (sensors_get_value(cn_, subfeature->number, &value) != 0) {
-      LOG(WARNING) << "Failure on call to lmsensors::sensors_get_value()";
+      SYSLOG(WARNING) << "Failure on call to lmsensors::sensors_get_value()";
       return std::numeric_limits<int>::min();
     }
     return value;

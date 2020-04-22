@@ -1,30 +1,21 @@
-#ifndef LEVIATHAN_CONFIG_H
-#define LEVIATHAN_CONFIG_H
-
+#pragma once
 #include "constants.h"
 #include <functional>
 #include <map>
 #include <string>
 
-#define DEFAULT_RED 0xFF0000
-
+namespace levd {
 using LineFunction = std::function<int32_t(int32_t)>;
 
-enum class TempSource { CPU, LIQUID };
+enum class TempSource { Cpu, Liquid };
 
 inline TempSource stringToTempSource(const std::string &tss) {
-  return tss == "liquid" ? TempSource::LIQUID : TempSource::CPU;
+  return tss == "cpu" ? TempSource::Cpu : TempSource::Liquid;
 }
-
-struct Point {
-  int32_t x;
-  int32_t y;
-  Point(int32_t __x, int32_t __y) : x(__x), y(__y) {}
-};
 
 struct leviathan_config {
   // Fan/pump profile
-  TempSource                      temp_source_{TempSource::CPU};
+  TempSource                      temp_source_{TempSource::Liquid};
   std::map<int32_t, LineFunction> fan_profile_;
   std::map<int32_t, LineFunction> pump_profile_;
 
@@ -35,9 +26,8 @@ struct leviathan_config {
   uint32_t main_color_{DEFAULT_RED};
 
   // Interval settings
-  uint32_t interval_{500};
+  uint32_t program_loop_interval_ms_{5000};
 };
 
 leviathan_config parse_config_file(const char *const path);
-
-#endif  // LEVIATHAN_CONFIG_H
+}  // namespace levd

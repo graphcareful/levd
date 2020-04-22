@@ -6,6 +6,7 @@
 
 #define kKrakenUsbTimeout 5000
 
+namespace levd {
 bool incoming_endpoint(const libusb_endpoint_descriptor &endpoint) {
   // Or alternatively if this bit operation isn't == 0
   return (endpoint.bEndpointAddress & LIBUSB_ENDPOINT_IN) == LIBUSB_ENDPOINT_IN;
@@ -36,14 +37,14 @@ libusb_device_handle *get_handle(libusb_device *device) {
   int                   ret    = libusb_open(device, &handle);
   switch (ret) {
   case LIBUSB_ERROR_NO_MEM:
-    LOG(FATAL) << "Out of memory";
+    SYSLOG(FATAL) << "Out of memory";
   case LIBUSB_ERROR_ACCESS:
-    LOG(FATAL) << "Insufficient permissions";
+    SYSLOG(FATAL) << "Insufficient permissions";
   case LIBUSB_ERROR_NO_DEVICE:
-    LOG(FATAL) << "Device disconnected";
+    SYSLOG(FATAL) << "Device disconnected";
   }
   if (LIBUSB_SUCCESS != ret || handle == NULL) {
-    LOG(FATAL) << "ERROR when calling libusb_open";
+    SYSLOG(FATAL) << "ERROR when calling libusb_open";
   }
   return handle;
 }
@@ -78,8 +79,8 @@ libusb_interface_descriptor get_main_usb_interface(
 }
 
 void set_endpoints(const libusb_endpoint_descriptor *endpoints,
-                   libusb_endpoint_descriptor &endpointIn,
-                   libusb_endpoint_descriptor &endpointOut) {
+                   libusb_endpoint_descriptor &      endpointIn,
+                   libusb_endpoint_descriptor &      endpointOut) {
   if (incoming_endpoint(endpoints[1])) {
     endpointIn = endpoints[1];
   } else {
@@ -96,34 +97,34 @@ bool transfer_bulk_raw_data(libusb_device_handle *handle,
                             unsigned char         endpoint,
                             unsigned char *       data,
                             size_t                length) {
-  unsigned char *           head              = data;
-  int *                     transferred       = new int;
-  size_t                    bytes_sent        = 0;
+  unsigned char *head        = data;
+  int            transferred = 0;
+  size_t         bytes_sent  = 0;
   while (bytes_sent < length) {
     size_t bytes_to_send = std::min((size_t)64, length - bytes_sent);
     int    ret = libusb_bulk_transfer(handle, endpoint, head, bytes_to_send,
-                                   transferred, kKrakenUsbTimeout);
+                                   &transferred, kKrakenUsbTimeout);
     if (ret == 0) {
-      VLOG(2) << "Success sending packet, " << *transferred << " bytes sent";
+      // SYSLOG(INFO) << "Success sending packet, " << transferred << " bytes
+      // sent";
       bytes_sent += bytes_to_send;
       head = data + bytes_sent;
     } else {
-      LOG(ERROR) << "Failed to send packed to device, got: "
-                << libusb_error_name(ret);
+      SYSLOG(ERROR) << "Failed to send packed to device, got: "
+                    << libusb_error_name(ret);
       break;
     }
   }
-  delete[] transferred;
   CHECK(bytes_sent <= length) << "Sent more bytes then should have";
   return (bytes_sent == length) ? true : false;
 }
 
 bool transfer_control_value(libusb_device_handle *handle, uint16_t value) {
   int ret = libusb_control_transfer(handle, 0x40, 2, value, 0, NULL, 0,
-                                  kKrakenUsbTimeout);
+                                    kKrakenUsbTimeout);
   CHECK(ret == 0) << "Error when performing initialization of device: "
-                << libusb_error_name(ret) << " -- "
-                << libusb_strerror((libusb_error)ret);
+                  << libusb_error_name(ret) << " -- "
+                  << libusb_strerror((libusb_error)ret);
   return ret == 0;
 }
-
+}  // namespace levd

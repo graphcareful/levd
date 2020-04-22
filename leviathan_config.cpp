@@ -1,8 +1,15 @@
 #include "leviathan_config.hpp"
-#include <exception>
 #include <algorithm>
+#include <exception>
 #include <glog/logging.h>
 #include <yaml-cpp/yaml.h>
+
+namespace levd {
+struct Point {
+  int32_t x;
+  int32_t y;
+  Point(int32_t __x, int32_t __y) : x(__x), y(__y) {}
+};
 
 // TODO: Cleaner normalization
 LineFunction slope_function(const Point &a, const Point &b) {
@@ -27,18 +34,19 @@ std::map<int32_t, LineFunction> configure_profile(
   const auto point_compare = [](const Point &p, const Point &u) {
     return p.x > u.x;
   };
-  std::vector<Point> dataPoints { Point(0, 30) };
+  std::vector<Point> dataPoints{Point(0, 30)};
   for (const auto &i : fan_profile.as<std::vector<std::vector<uint32_t>>>()) {
     CHECK(i.size() == 2) << "Expecting array of pairs for fan/pump profile";
-    CHECK(i.back() % 5 == 0) << "Fan/pump profile values must be divisible by 5";
+    CHECK(i.back() % 5 == 0)
+      << "Fan/pump profile values must be divisible by 5";
     dataPoints.emplace_back(i.front(), i.back());
   }
   dataPoints.emplace_back(100, 100);
   std::sort(dataPoints.begin(), dataPoints.end(), point_compare);
   std::map<int32_t, LineFunction> temp_to_slope;
   for (auto i = 0; i < dataPoints.size() - 1; ++i) {
-    const Point &cur_pt = dataPoints[i];
-    const Point &next_pt = dataPoints[i + 1];
+    const Point &cur_pt     = dataPoints[i];
+    const Point &next_pt    = dataPoints[i + 1];
     temp_to_slope[cur_pt.x] = slope_function(cur_pt, next_pt);
   }
   return temp_to_slope;
@@ -47,15 +55,20 @@ std::map<int32_t, LineFunction> configure_profile(
 leviathan_config parse_config_file(const char *const path) {
   leviathan_config options;
   try {
-    YAML::Node config     = YAML::LoadFile(path);
-    options.temp_source_  = stringToTempSource(config["temperature_source"].as<std::string>());
+    YAML::Node config = YAML::LoadFile(path);
+    options.temp_source_ =
+      stringToTempSource(config["temperature_source"].as<std::string>());
     options.fan_profile_  = configure_profile(config["fan_profile"]);
-    options.pump_profile_ = config["pump_profile"] ? configure_profile(config["pump_profile"]) : options.fan_profile_;
-    options.main_color_   = config["main_color"].as<uint32_t>();
-    options.interval_     = config["interval"].as<uint32_t>();
-    options.conky_file_   = config["conky_file"].as<std::string>();
+    options.pump_profile_ = config["pump_profile"] ?
+                              configure_profile(config["pump_profile"]) :
+                              options.fan_profile_;
+    options.main_color_ = config["main_color"].as<uint32_t>();
+    options.program_loop_interval_ms_ =
+      config["program_loop_interval_ms"].as<uint32_t>();
+    options.conky_file_ = config["conky_file"].as<std::string>();
   } catch (std::exception &e) {
-    LOG(FATAL) << "Yaml parsing error: " << e.what();
+    SYSLOG(FATAL) << "Yaml parsing error: " << e.what();
   }
   return options;
 }
+}  // namespace levd

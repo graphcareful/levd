@@ -1,12 +1,11 @@
-#ifndef KRAKEN_DRIVER_H
-#define KRAKEN_DRIVER_H
-
+#pragma once
 #include <libusb-1.0/libusb.h>
 #include <map>
 #include <string>
 
 #include "constants.h"
 
+namespace levd {
 // Using this class will query usb bus for the kraken device details
 // and set the proper usb configuration to kMainConfigurationIndex
 class KrakenDriver {
@@ -15,13 +14,13 @@ class KrakenDriver {
   // Creating an instance of this object claims ownership of the usb
   // endpoint, new instances fail to initalize on construction
   KrakenDriver(libusb_device *kraken);
-  KrakenDriver(const KrakenDriver &) = delete;
+  KrakenDriver(const KrakenDriver &)  = delete;
   KrakenDriver(const KrakenDriver &&) = delete;
   virtual ~KrakenDriver();
 
-  void setFanSpeed(unsigned char);
-  void setPumpSpeed(unsigned char);
-  void setColor(uint32_t);
+  void                            setFanSpeed(unsigned char);
+  void                            setPumpSpeed(unsigned char);
+  void                            setColor(uint32_t);
   std::map<std::string, uint32_t> sendColorUpdate();
   std::map<std::string, uint32_t> sendSpeedUpdate();
 
@@ -48,5 +47,4 @@ class KrakenDriver {
   libusb_endpoint_descriptor _endpointOut;
   libusb_endpoint_descriptor _endpointIn;
 };
-
-#endif  // KRAKEN_DRIVER_H
+}  // namespace levd

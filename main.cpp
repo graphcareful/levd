@@ -7,7 +7,7 @@ int main(int argc, char *argv[]) {
   FLAGS_logtostderr = 1;
   google::InstallFailureSignalHandler();
   google::InitGoogleLogging(argv[0]);
-  LOG(INFO) << "Starting Levd Daemon version: " << LEVD_VERSION_MAJOR << "."
+  SYSLOG(INFO) << "Starting Levd Daemon version: " << LEVD_VERSION_MAJOR << "."
             << LEVD_VERSION_MINOR;
 
   const int rc = libusb_init(NULL);
@@ -16,21 +16,21 @@ int main(int argc, char *argv[]) {
   libusb_device **devices;
   ssize_t         num_devices = libusb_get_device_list(NULL, &devices);
   if (num_devices == 0) {
-    LOG(WARNING) << "There are no usb devices attached";
+    SYSLOG(WARNING) << "There are no usb devices attached";
     return 0;
   }
-  LOG(INFO) << "libusb successfully initialized...";
-  LOG(INFO) << "There are " << num_devices << " usb devices hooked up";
-  libusb_device *kraken_device = leviathan_init(devices, num_devices);
+  SYSLOG(INFO) << "libusb successfully initialized...";
+  SYSLOG(INFO) << "There are " << num_devices << " usb devices hooked up";
+  libusb_device *kraken_device = levd::leviathan_init(devices, num_devices);
   if (kraken_device) {
-    LOG(INFO) << "Kraken X61 is detected";
-    LOG(INFO) << "Starting levd service...";
-    leviathan_start(kraken_device);
+    SYSLOG(INFO) << "Kraken X61 is detected";
+    SYSLOG(INFO) << "Starting levd service...";
+    levd::leviathan_start(kraken_device);
   } else {
-    LOG(ERROR) << "Kraken X61 was not detected";
+    SYSLOG(ERROR) << "Kraken X61 was not detected";
   }
 
-  LOG(INFO) << "... driver gracefully shutting down";
+  SYSLOG(INFO) << "... driver gracefully shutting down";
   libusb_free_device_list(devices, true);
   libusb_exit(NULL);
   return 0;

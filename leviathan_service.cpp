@@ -23,14 +23,16 @@ using namespace std::chrono_literals;
 volatile sig_atomic_t done = 0;
 void                  term(int signum) { done = 1; }
 
+namespace levd {
+
 /** *********** Private Interface ************** */
 
 bool detect_kraken(libusb_device *device) {
   struct libusb_device_descriptor desc = {0};
   int err = libusb_get_device_descriptor(device, &desc);
   if (err != 0) {
-    LOG(ERROR) << "Failed to get descriptor for generic device: "
-               << libusb_error_name(err);
+    SYSLOG(ERROR) << "Failed to get descriptor for generic device: "
+                  << libusb_error_name(err);
     return false;
   }
   return desc.idVendor == KRAKEN_X61_VENDOR
@@ -46,7 +48,7 @@ uint32_t next_speed(const std::map<int32_t, LineFunction> &fan_profile,
 int file_is_modified(const char *path, time_t oldMTime) {
   struct stat file_stat;
   int         err = stat(path, &file_stat);
-  LOG_IF(FATAL, err != 0) << "Error when attempting to stat " << path;
+  SYSLOG_IF(FATAL, err != 0) << "Error when attempting to stat " << path;
   return file_stat.st_mtime > oldMTime;
 }
 
@@ -60,8 +62,9 @@ void update_conky_file(std::ostream &     ostream,
   ss << "Fan Speed: " << fan_speed << std::endl;
   ss << "Pump Speed: " << pump_speed << std::endl;
   ss << "Water Temp: " << water_temp << std::endl;
-  ostream.seekp(0);
+  ostream.seekp(0, std::ios::beg);
   ostream << ss.str();
+  ostream.flush();
 }
 
 /** *********** Public Interface ************** */
@@ -80,8 +83,8 @@ libusb_device *leviathan_init(libusb_device **devices, ssize_t num_devices) {
 void leviathan_start(libusb_device *kraken_device) {
   // Init Kraken, display diagnostics
   auto kd = std::make_unique<KrakenDriver>(kraken_device);
-  LOG(INFO) << "Kraken Driver Initialized";
-  LOG(INFO) << "Kraken Serial No: " << kd->getSerialNumber();
+  SYSLOG(INFO) << "Kraken Driver Initialized";
+  SYSLOG(INFO) << "Kraken Serial No: " << kd->getSerialNumber();
 
   // The following two lines throw/crash on config error
   CpuTemperatureMonitor cpu_temp_mon;
@@ -89,6 +92,7 @@ void leviathan_start(libusb_device *kraken_device) {
   std::ofstream         conky_oss(config_opts.conky_file_);
 
   // Local variables for state management
+  double   cpu_avg_core_temp  = 0;
   uint32_t cpu_temp           = 0;
   uint32_t liquid_temp        = 0;
   uint32_t old_fan_speed      = 0;  // Take first reported value as
@@ -98,10 +102,13 @@ void leviathan_start(libusb_device *kraken_device) {
   // Init signal handler
   struct sigaction action;
   memset(&action, 0, sizeof(struct sigaction));
+  sigemptyset(&action.sa_mask);
+  action.sa_flags   = 0;
   action.sa_handler = term;
-  sigaction(SIGTERM, &action, NULL);
-  sigaction(SIGQUIT, &action, NULL);
-  sigaction(SIGINT, &action, NULL);
+  CHECK(sigaction(SIGTERM, &action, NULL) >= 0);
+  CHECK(sigaction(SIGQUIT, &action, NULL) >= 0);
+  CHECK(sigaction(SIGHUP, &action, NULL) >= 0);
+  CHECK(sigaction(SIGINT, &action, NULL) >= 0);
 
   // Main program loop
   // 1. Update config_options if config file was edited
@@ -112,7 +119,7 @@ void leviathan_start(libusb_device *kraken_device) {
   while (!done) {
     // Grab latest parameters, if they've been changed
     if (file_is_modified(kDefaultConfigFile, last_time_modified)) {
-      LOG(INFO)
+      SYSLOG(INFO)
         << "Detected modifications to config file, updating preferences...";
       config_opts        = parse_config_file(kDefaultConfigFile);
       last_time_modified = time(0);
@@ -123,19 +130,20 @@ void leviathan_start(libusb_device *kraken_device) {
     auto update = kd->sendColorUpdate();
 
     // Grab latest cpu and liquid temperatures
-    cpu_temp    = cpu_temp_mon.getPackageIdTemperature();
-    liquid_temp = update.find("liquid_temperature")->second;
+    cpu_temp          = cpu_temp_mon.getPackageIdTemperature();
+    cpu_avg_core_temp = cpu_temp_mon.getAverageTempAcrossCores();
+    liquid_temp       = update.find("liquid_temperature")->second;
 
     // Based on parameters and current temp, set desired fan and pump speeds
     uint32_t next_fan, next_pump;
-    if (config_opts.temp_source_ == TempSource::LIQUID) {
+    if (config_opts.temp_source_ == TempSource::Liquid) {
       next_fan  = next_speed(config_opts.fan_profile_, liquid_temp);
       next_pump = next_speed(config_opts.pump_profile_, liquid_temp);
-      VLOG(2) << "Current liquid temperature: " << liquid_temp << "C";
+      // SYSLOG(INFO) << "Current liquid temperature: " << liquid_temp << "C";
     } else {
       next_fan  = next_speed(config_opts.fan_profile_, cpu_temp);
       next_pump = next_speed(config_opts.pump_profile_, cpu_temp);
-      VLOG(2) << "Current CPU temperature: " << cpu_temp << "C";
+      // SYSLOG(INFO) << "Current CPU temperature: " << cpu_temp << "C";
     }
     // Step down: If we are decreasing fan/pump speed, do it slowly
     if (next_fan < old_fan_speed) {
@@ -144,13 +152,13 @@ void leviathan_start(libusb_device *kraken_device) {
     if (next_pump < old_pump_speed) {
       next_pump = old_pump_speed - 5;
     }
-    VLOG(2) << "Setting fan speed: " << next_fan;
-    VLOG(2) << "Setting pump speeds: " << next_pump;
+    // SYSLOG(INFO) << "Setting fan speed: " << next_fan;
+    // SYSLOG(INFO) << "Setting pump speeds: " << next_pump;
     kd->setFanSpeed(next_fan);
     kd->setPumpSpeed(next_pump);
     update = kd->sendSpeedUpdate();
     if (update.empty() == true) {
-      LOG(WARNING) << "Bad update detected, attempting reconnection...";
+      SYSLOG(ERROR) << "Bad update detected, attempting reconnection...";
       // NOTE: Must ensure that destructor of old object pointed to by kd
       // is cleaned up before reassignment to a new instance of kraken
       // driver. i.e. only one can be alive at any given time.
@@ -162,11 +170,15 @@ void leviathan_start(libusb_device *kraken_device) {
     if (next_fan != old_fan_speed || next_pump != old_pump_speed) {
       const auto fan_speed  = update.find("fan_speed")->second;
       const auto pump_speed = update.find("pump_speed")->second;
-      LOG(INFO) << "Changed fan speed to " << fan_speed << "rpm, pump speed to "
-                << pump_speed << "rpm, with fan percentage at " << next_fan
-                << ", with pump percentage at " << next_pump
-                << ", current CPU temperature at " << cpu_temp << "C"
-                << ", and current liquid temperature at " << liquid_temp << "C";
+      SYSLOG(INFO) << "Changed fan speed to " << fan_speed
+                   << "rpm, pump speed to " << pump_speed
+                   << "rpm, with fan percentage at " << next_fan
+                   << ", with pump percentage at " << next_pump
+                   << ", current Cpu Package Temp at " << cpu_temp << "C"
+                   << ", current average Cpu core Temp at " << cpu_avg_core_temp
+                   << "C"
+                   << ", and current liquid temperature at " << liquid_temp
+                   << "C";
       update_conky_file(conky_oss, kd->getSerialNumber(), fan_speed, pump_speed,
                         liquid_temp);
       old_fan_speed  = next_fan;
@@ -174,8 +186,9 @@ void leviathan_start(libusb_device *kraken_device) {
     }
 
     std::this_thread::sleep_for(
-      std::chrono::milliseconds(config_opts.interval_));
+      std::chrono::milliseconds(config_opts.program_loop_interval_ms_));
   }
 
   kd.reset(nullptr);
 }
+}  // namespace levd
